@@ -14,6 +14,7 @@
  */
 
 #include <stdlib.h>
+#include <pthread.h>
 #include "gol.h"
 
 /* Statistics */
@@ -114,6 +115,70 @@ stats_t play(cell_t **board, cell_t **newboard, int size)
     }
 
     return stats;
+}
+
+void* play_parallel(void* arg)
+{
+    aux dados = *((aux*) arg);
+    // int begin = dados.i_begin * dados.size + dados.j_begin;
+    // int end = dados.i_end * dados.size + dados.j_end;
+    int x, a;
+
+    stats_t stats = {0, 0, 0, 0};
+    dados.stats = &stats;
+
+    /* for each cell, apply the rules of Life */
+    // for (i = 0; i < dados.size; i++)
+    // {
+        for (x = dados.begin; x < dados.end; x++)
+        {
+            int i = x / dados.size;
+            int j = x % dados.size;
+            a = adjacent_to(dados.board, dados.size, i, j);
+
+            /* if cell is alive */
+            if(dados.board[i][j]) 
+            {
+                /* death: loneliness */
+                if(a < 2) {
+                    dados.newboard[i][j] = 0;
+                    dados.stats->loneliness++; // VERIFICAR ISSO
+                }
+                else
+                {
+                    /* survival */
+                    if(a == 2 || a == 3)
+                    {
+                        dados.newboard[i][j] = dados.board[i][j];
+                        dados.stats->survivals++;
+                    }
+                    else
+                    {
+                        /* death: overcrowding */
+                        if(a > 3)
+                        {
+                            dados.newboard[i][j] = 0;
+                            dados.stats->overcrowding++;
+                        }
+                    }
+                }
+                
+            }
+            else /* if cell is dead */
+            {
+                if(a == 3) /* new born */
+                {
+                    dados.newboard[i][j] = 1;
+                    dados.stats->borns++;
+                }
+                else /* stay unchanged */
+                    dados.newboard[i][j] = dados.board[i][j];
+            }
+        }
+    // }
+
+    // return stats;
+    pthread_exit(NULL);
 }
 
 void print_board(cell_t **board, int size)

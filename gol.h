@@ -24,6 +24,14 @@ typedef struct {
     unsigned int survivals;
 } stats_t;
 
+typedef struct {
+    cell_t **board, **newboard;
+    // int size, i_begin, j_begin, i_end, j_end;
+    int size, begin, end;
+    stats_t* stats;
+} aux;
+
+
 /* Allocate a GoL board of size = size^2 */
 cell_t ** allocate_board(int size);
 
@@ -35,6 +43,8 @@ int adjacent_to(cell_t ** board, int size, int i, int j);
 
 /* Compute the next generation (newboard) based on the current generation (board) and returns its statistics */
 stats_t play(cell_t ** board, cell_t ** newboard, int size);
+
+void* play_parallel(void* arg);
 
 /* Print the GoL board */
 void print_board(cell_t ** board, int size);
