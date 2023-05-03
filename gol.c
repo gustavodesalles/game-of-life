@@ -124,8 +124,8 @@ void* play_parallel(void* arg)
     // int end = dados.i_end * dados.size + dados.j_end;
     int x, a;
 
-    stats_t stats = {0, 0, 0, 0};
-    dados->stats = &stats;
+    // stats_t stats = {0, 0, 0, 0};
+    // dados->stats = stats;
 
     /* for each cell, apply the rules of Life */
     // for (i = 0; i < dados.size; i++)
@@ -142,7 +142,7 @@ void* play_parallel(void* arg)
                 /* death: loneliness */
                 if(a < 2) {
                     dados->newboard[i][j] = 0;
-                    dados->stats->loneliness++; // VERIFICAR ISSO
+                    dados->stats.loneliness++; // VERIFICAR ISSO
                 }
                 else
                 {
@@ -150,7 +150,7 @@ void* play_parallel(void* arg)
                     if(a == 2 || a == 3)
                     {
                         dados->newboard[i][j] = dados->board[i][j];
-                        dados->stats->survivals++;
+                        dados->stats.survivals++;
                     }
                     else
                     {
@@ -158,7 +158,7 @@ void* play_parallel(void* arg)
                         if(a > 3)
                         {
                             dados->newboard[i][j] = 0;
-                            dados->stats->overcrowding++;
+                            dados->stats.overcrowding++;
                         }
                     }
                 }
@@ -169,7 +169,7 @@ void* play_parallel(void* arg)
                 if(a == 3) /* new born */
                 {
                     dados->newboard[i][j] = 1;
-                    dados->stats->borns++;
+                    dados->stats.borns++;
                 }
                 else /* stay unchanged */
                     dados->newboard[i][j] = dados->board[i][j];

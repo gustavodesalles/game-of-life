@@ -28,7 +28,7 @@ typedef struct {
     cell_t **board, **newboard;
     // int size, i_begin, j_begin, i_end, j_end;
     int size, begin, end;
-    stats_t* stats;
+    stats_t stats;
 } aux;
 
 

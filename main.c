@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <pthread.h>
 #include "gol.h"
 
@@ -10,14 +11,14 @@ int main(int argc, char **argv)
     stats_t stats_step = {0, 0, 0, 0};
     stats_t stats_total = {0, 0, 0, 0};
 
-    if (argc != 2)
+    if (argc != 3)
     {
         printf("ERRO! Você deve digitar %s <nome do arquivo do tabuleiro>!\n\n", argv[0]);
         return 0;
     }
 
     //Quantas threads?
-    int n_threads = atoi(argv[0]);
+    int n_threads = atoi(argv[2]);
     if (!n_threads) {
         printf("Número de threads deve ser > 0\n");
         return 1;
@@ -76,23 +77,28 @@ int main(int argc, char **argv)
 
     for (int i = 0; i < steps; i++)
     {
+        stats_step.borns = 0;
+        stats_step.loneliness = 0;
+        stats_step.overcrowding = 0;
+        stats_step.survivals = 0;
+
         //TODO: iniciar threads que executam "play"
         for (int j = 0; j < n_threads; j++)
         {
             info[j].board = prev;
             info[j].newboard = next;
-            info[j].stats = &stats_step;
+            info[j].stats = stats_step;
             pthread_create(&threads[j], NULL, play_parallel, (void *) &info[j]);
         }
         
         // stats_step = play(prev, next, size);
-        for (int j = 0; i < n_threads; j++)
+        for (int j = 0; j < n_threads; j++)
         {
             pthread_join(threads[j], NULL);
-            stats_total.borns += info[j].stats->borns;
-            stats_total.survivals += info[j].stats->survivals;
-            stats_total.loneliness += info[j].stats->loneliness;
-            stats_total.overcrowding += info[j].stats->overcrowding;
+            stats_total.borns += info[j].stats.borns;
+            stats_total.survivals += info[j].stats.survivals;
+            stats_total.loneliness += info[j].stats.loneliness;
+            stats_total.overcrowding += info[j].stats.overcrowding;
         }
 
 #ifdef DEBUG
