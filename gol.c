@@ -13,17 +13,11 @@
  *
  */
 
-#define _XOPEN_SOURCE 600
 #include <stdlib.h>
-#include <pthread.h>
-#include <semaphore.h>
 #include "gol.h"
-
-pthread_barrier_t barrier;
 
 /* Statistics */
 stats_t statistics;
-sem_t sem;
 
 cell_t **allocate_board(int size)
 {
@@ -31,7 +25,7 @@ cell_t **allocate_board(int size)
     int i;
     for (i = 0; i < size; i++)
         board[i] = (cell_t *)malloc(sizeof(cell_t) * size);
-
+    
     statistics.borns = 0;
     statistics.survivals = 0;
     statistics.loneliness = 0;
@@ -65,128 +59,61 @@ int adjacent_to(cell_t **board, int size, int i, int j)
     return count;
 }
 
-// stats_t play(cell_t **board, cell_t **newboard, int size)
-// {
-//     int i, j, a;
-
-//     stats_t stats = {0, 0, 0, 0};
-
-//     /* for each cell, apply the rules of Life */
-//     for (i = 0; i < size; i++)
-//     {
-//         for (j = 0; j < size; j++)
-//         {
-//             a = adjacent_to(board, size, i, j);
-
-//             /* if cell is alive */
-//             if(board[i][j])
-//             {
-//                 /* death: loneliness */
-//                 if(a < 2) {
-//                     newboard[i][j] = 0;
-//                     stats.loneliness++;
-//                 }
-//                 else
-//                 {
-//                     /* survival */
-//                     if(a == 2 || a == 3)
-//                     {
-//                         newboard[i][j] = board[i][j];
-//                         stats.survivals++;
-//                     }
-//                     else
-//                     {
-//                         /* death: overcrowding */
-//                         if(a > 3)
-//                         {
-//                             newboard[i][j] = 0;
-//                             stats.overcrowding++;
-//                         }
-//                     }
-//                 }
-
-//             }
-//             else /* if cell is dead */
-//             {
-//                 if(a == 3) /* new born */
-//                 {
-//                     newboard[i][j] = 1;
-//                     stats.borns++;
-//                 }
-//                 else /* stay unchanged */
-//                     newboard[i][j] = board[i][j];
-//             }
-//         }
-//     }
-
-//     return stats;
-// }
-
-void *play_parallel(void *arg)
+stats_t play(cell_t **board, cell_t **newboard, int size)
 {
-    aux *dados = (aux *)arg;
-    // int begin = dados.i_begin * dados.size + dados.j_begin;
-    // int end = dados.i_end * dados.size + dados.j_end;
-    int x, a;
+    int i, j, a;
 
-    // stats_t stats = {0, 0, 0, 0};
-    // dados->stats = stats;
+    stats_t stats = {0, 0, 0, 0};
 
     /* for each cell, apply the rules of Life */
-    // for (i = 0; i < dados.size; i++)
-    // {
-
-    for (x = dados->begin; x < dados->end; x++)
+    for (i = 0; i < size; i++)
     {
-        int i = x / dados->size;
-        int j = x % dados->size;
-        a = adjacent_to(dados->board, dados->size, i, j);
-
-        pthread_barrier_wait(&barrier);
-
-        /* if cell is alive */
-        if (dados->board[i][j])
+        for (j = 0; j < size; j++)
         {
-            /* death: loneliness */
-            if (a < 2)
+            a = adjacent_to(board, size, i, j);
+
+            /* if cell is alive */
+            if(board[i][j]) 
             {
-                dados->newboard[i][j] = 0;
-                dados->stats.loneliness++; // VERIFICAR ISSO
-            }
-            else
-            {
-                /* survival */
-                if (a == 2 || a == 3)
-                {
-                    dados->newboard[i][j] = dados->board[i][j];
-                    dados->stats.survivals++;
+                /* death: loneliness */
+                if(a < 2) {
+                    newboard[i][j] = 0;
+                    stats.loneliness++;
                 }
                 else
                 {
-                    /* death: overcrowding */
-                    if (a > 3)
+                    /* survival */
+                    if(a == 2 || a == 3)
                     {
-                        dados->newboard[i][j] = 0;
-                        dados->stats.overcrowding++;
+                        newboard[i][j] = board[i][j];
+                        stats.survivals++;
+                    }
+                    else
+                    {
+                        /* death: overcrowding */
+                        if(a > 3)
+                        {
+                            newboard[i][j] = 0;
+                            stats.overcrowding++;
+                        }
                     }
                 }
+                
             }
-        }
-        else /* if cell is dead */
-        {
-            if (a == 3) /* new born */
+            else /* if cell is dead */
             {
-                dados->newboard[i][j] = 1;
-                dados->stats.borns++;
+                if(a == 3) /* new born */
+                {
+                    newboard[i][j] = 1;
+                    stats.borns++;
+                }
+                else /* stay unchanged */
+                    newboard[i][j] = board[i][j];
             }
-            else /* stay unchanged */
-                dados->newboard[i][j] = dados->board[i][j];
         }
     }
-    // }
 
-    // return stats;
-    pthread_exit(NULL);
+    return stats;
 }
 
 void print_board(cell_t **board, int size)
@@ -207,12 +134,12 @@ void print_stats(stats_t stats)
 {
     /* print final statistics */
     printf("Statistics:\n\tBorns..............: %u\n\tSurvivals..........: %u\n\tLoneliness deaths..: %u\n\tOvercrowding deaths: %u\n\n",
-           stats.borns, stats.survivals, stats.loneliness, stats.overcrowding);
+        stats.borns, stats.survivals, stats.loneliness, stats.overcrowding);
 }
 
 void read_file(FILE *f, cell_t **board, int size)
 {
-    char *s = (char *)malloc(size + 10);
+    char *s = (char *) malloc(size + 10);
 
     /* read the first new line (it will be ignored) */
     fgets(s, size + 10, f);
